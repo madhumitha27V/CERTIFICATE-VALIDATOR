@@ -12,20 +12,30 @@ import csv
 import re
 import json
 
-# Set Tesseract-OCR path for Windows
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Environment-based configuration
+if os.path.exists('.env'):
+    from dotenv import load_dotenv
+    load_dotenv()
+
+# Set Tesseract-OCR path (Windows local vs Linux hosting)
+tesseract_cmd = os.environ.get('TESSERACT_CMD', r'C:\Program Files\Tesseract-OCR\tesseract.exe')
+pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+# Use environment variable for secret key (more secure)
+app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key_change_in_production')
 
-UPLOAD_FOLDER = 'static/uploads/'
+# Configuration from environment variables
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'static/uploads/')
 ALLOWED_EXTENSIONS = {'csv', 'jpeg', 'jpg', 'png'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 16777216))  # 16MB max
 
 # Ensure upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-DB_PATH = 'database.db'
+# Database path - can be configured for different environments
+DB_PATH = os.environ.get('DATABASE_URL', 'database.db').replace('sqlite:///', '')
 
 # --- Role-Based Authentication Helpers ---
 def hash_password(password):
