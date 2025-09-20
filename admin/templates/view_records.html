@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>View Records - Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .subjects-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9em;
+        }
+        .record-card {
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+        }
+        .subject-item {
+            padding: 0.25rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .subject-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">Admin Dashboard</a>
+            <div class="d-flex">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light me-2">Back to Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light">Logout</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2>Extracted Marksheet Records</h2>
+                
+                {% if records %}
+                    <div class="alert alert-info">
+                        <strong>Total Records Found:</strong> {{ records|length }}
+                    </div>
+                    
+                    {% for record in records %}
+                    <div class="card record-card">
+                        <div class="card-header">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="card-title mb-0">{{ record.student_name or 'N/A' }}</h5>
+                                    <small class="text-muted">Session: {{ record.session|upper }}</small>
+                                </div>
+                                <div class="col-md-6 text-md-end">
+                                    <span class="badge bg-primary">ID: {{ record.id }}</span>
+                                    {% if record.cgpa %}
+                                        <span class="badge bg-success">CGPA: {{ record.cgpa }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Personal Information</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>College:</strong></td>
+                                            <td>{{ record.college_name or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Folio No:</strong></td>
+                                            <td>{{ record.folio_no or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Register No:</strong></td>
+                                            <td>{{ record.register_number or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Date of Birth:</strong></td>
+                                            <td>{{ record.dob or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Gender:</strong></td>
+                                            <td>{{ record.gender or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Branch:</strong></td>
+                                            <td>{{ record.branch or 'N/A' }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Academic Information</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>Current Semester GPA:</strong></td>
+                                            <td>{{ record.gpa or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>CGPA:</strong></td>
+                                            <td>{{ record.cgpa or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Credits Enrolled:</strong></td>
+                                            <td>{{ record.credits_enrolled or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Credits Earned:</strong></td>
+                                            <td>{{ record.credits_earned or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Date of Issue:</strong></td>
+                                            <td>{{ record.date_of_issue or 'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Controller:</strong></td>
+                                            <td>{{ record.controller_signature or 'N/A' }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            {% if record.subjects %}
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6>Subjects ({{ record.subjects|length }} found)</h6>
+                                    <div class="subjects-list">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Code</th>
+                                                        <th>Subject Name</th>
+                                                        <th>Credits</th>
+                                                        <th>Internal Marks</th>
+                                                        <th>Grade</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for subject in record.subjects %}
+                                                    <tr>
+                                                        <td>{{ subject.code or 'N/A' }}</td>
+                                                        <td>{{ subject.name or 'N/A' }}</td>
+                                                        <td>{{ subject.credits or 'N/A' }}</td>
+                                                        <td>{{ subject.internal_marks or 'N/A' }}</td>
+                                                        <td>{{ subject.grade or 'N/A' }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if record.meta %}
+                            {% set meta_data = record.meta|fromjson %}
+                            {% if meta_data and meta_data.semester_wise_data %}
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6>Semester-wise Academic Progress</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Semester</th>
+                                                    <th>Session</th>
+                                                    <th>Credits Enrolled</th>
+                                                    <th>Credits Earned</th>
+                                                    <th>GPA</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>1</td>
+                                                    <td>January 2024</td>
+                                                    <td>{{ meta_data.semester_wise_data.sem1_credits_enrolled or 'N/A' }}</td>
+                                                    <td>{{ meta_data.semester_wise_data.sem1_credits_earned or 'N/A' }}</td>
+                                                    <td>{{ meta_data.semester_wise_data.sem1_gpa or 'N/A' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>2</td>
+                                                    <td>May 2024</td>
+                                                    <td>{{ meta_data.semester_wise_data.sem2_credits_enrolled or 'N/A' }}</td>
+                                                    <td>{{ meta_data.semester_wise_data.sem2_credits_earned or 'N/A' }}</td>
+                                                    <td>{{ meta_data.semester_wise_data.sem2_gpa or 'N/A' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>3</td>
+                                                    <td>November 2024</td>
+                                                    <td>{{ meta_data.semester_wise_data.sem3_credits_enrolled or 'N/A' }}</td>
+                                                    <td>{{ meta_data.semester_wise_data.sem3_credits_earned or 'N/A' }}</td>
+                                                    <td>{{ meta_data.semester_wise_data.sem3_gpa or 'N/A' }}</td>
+                                                </tr>
+                                                <tr class="table-info">
+                                                    <td><strong>Total</strong></td>
+                                                    <td><strong>Cumulative</strong></td>
+                                                    <td><strong>{{ meta_data.semester_wise_data.total_credits_enrolled or 'N/A' }}</strong></td>
+                                                    <td><strong>{{ meta_data.semester_wise_data.total_credits_earned or 'N/A' }}</strong></td>
+                                                    <td><strong>{{ record.cgpa or 'N/A' }} (CGPA)</strong></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <small class="text-muted">{{ meta_data.extraction_source if meta_data else record.meta }}</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                {% else %}
+                    <div class="alert alert-warning">
+                        <h4>No Records Found</h4>
+                        <p>No marksheet records have been processed yet. Upload some marksheets to see data here.</p>
+                        <a href="{{ url_for('upload_single') }}" class="btn btn-primary">Upload Marksheet</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

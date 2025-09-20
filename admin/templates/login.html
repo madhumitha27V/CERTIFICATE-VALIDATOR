@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - CertifyChain</title>
+    
+    <!-- Modern CSS Frameworks -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><polygon fill="%23ffffff08" points="0,1000 1000,0 1000,1000"/></svg>');
+            background-size: cover;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 2rem 0;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+        }
+
+        .login-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .login-header::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .login-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .login-form {
+            padding: 3rem 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px 20px 15px 50px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            background: white;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            font-size: 1.1rem;
+            z-index: 10;
+        }
+
+        .form-group.focused .input-icon {
+            color: #667eea;
+        }
+
+        .btn-login {
+            background: var(--success-gradient);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: white;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .signup-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .signup-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .back-to-home {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            color: white;
+            font-size: 1.2rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .back-to-home:hover {
+            color: rgba(255, 255, 255, 0.8);
+            transform: translateX(-5px);
+        }
+
+        .features-sidebar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 20px;
+            color: white;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            width: 40px;
+            text-align: center;
+        }
+
+        .feature-text {
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .login-card {
+                margin: 1rem;
+                border-radius: 20px;
+            }
+            
+            .login-title {
+                font-size: 2rem;
+            }
+            
+            .features-sidebar {
+                margin-top: 2rem;
+            }
+        }
+
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        .shape:nth-child(1) { width: 60px; height: 60px; top: 20%; left: 10%; animation-delay: -2s; }
+        .shape:nth-child(2) { width: 100px; height: 100px; top: 60%; left: 85%; animation-delay: -8s; }
+        .shape:nth-child(3) { width: 40px; height: 40px; top: 80%; left: 15%; animation-delay: -4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
+            50% { transform: translateY(-50px) rotate(180deg); opacity: 0.8; }
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            cursor: pointer;
+            font-size: 1rem;
+            z-index: 10;
+        }
+
+        .password-toggle:hover {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('index') }}" class="back-to-home">
+        <i class="fas fa-arrow-left me-2"></i>Back to Home
+    </a>
+
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="login-container">
+        <div class="container">
+            <div class="row justify-content-center align-items-center">
+                <div class="col-lg-5 col-xl-4">
+                    <div class="login-card">
+                        <div class="login-header">
+                            <h1 class="login-title">
+                                <i class="fas fa-sign-in-alt me-3"></i>Welcome Back
+                            </h1>
+                            <p class="login-subtitle">Sign in to your CertifyChain account</p>
+                        </div>
+
+                        <div class="login-form">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                              {% if messages %}
+                                {% for category, message in messages %}
+                                  <div class="alert alert-{{ 'danger' if category == 'error' else category }} d-flex align-items-center">
+                                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                                    {{ message }}
+                                  </div>
+                                {% endfor %}
+                              {% endif %}
+                            {% endwith %}
+
+                            <form method="POST" id="loginForm">
+                                <!-- Username -->
+                                <div class="form-group">
+                                    <label for="username" class="form-label">Username</label>
+                                    <div class="position-relative">
+                                        <i class="fas fa-user input-icon"></i>
+                                        <input type="text" class="form-control" id="username" name="username" required 
+                                               placeholder="Enter your username">
+                                    </div>
+                                </div>
+
+                                <!-- Password -->
+                                <div class="form-group">
+                                    <label for="password" class="form-label">Password</label>
+                                    <div class="position-relative">
+                                        <i class="fas fa-lock input-icon"></i>
+                                        <input type="password" class="form-control" id="password" name="password" required 
+                                               placeholder="Enter your password">
+                                        <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Remember Me & Forgot Password -->
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                                        <label class="form-check-label" for="remember">
+                                            Remember me
+                                        </label>
+                                    </div>
+                                    <a href="#" class="text-muted small">Forgot password?</a>
+                                </div>
+
+                                <button type="submit" class="btn-login">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                                </button>
+
+                                <div class="signup-link">
+                                    <p>Don't have an account? <a href="{{ url_for('signup') }}">Create one here</a></p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Sidebar -->
+                <div class="col-lg-4 col-xl-3 ms-lg-4 d-none d-lg-block">
+                    <div class="features-sidebar">
+                        <h4 class="mb-4 fw-bold">Why CertifyChain?</h4>
+                        
+                        <div class="feature-item">
+                            <i class="fas fa-shield-alt feature-icon"></i>
+                            <div class="feature-text">Secure blockchain verification</div>
+                        </div>
+
+                        <div class="feature-item">
+                            <i class="fas fa-bolt feature-icon"></i>
+                            <div class="feature-text">Instant certificate validation</div>
+                        </div>
+
+                        <div class="feature-item">
+                            <i class="fas fa-users feature-icon"></i>
+                            <div class="feature-text">Multi-role access control</div>
+                        </div>
+
+                        <div class="feature-item">
+                            <i class="fas fa-search feature-icon"></i>
+                            <div class="feature-text">Advanced duplicate detection</div>
+                        </div>
+
+                        <div class="feature-item">
+                            <i class="fas fa-cloud feature-icon"></i>
+                            <div class="feature-text">Cloud-based processing</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Form focus effects
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.closest('.form-group').classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.closest('.form-group').classList.remove('focused');
+            });
+        });
+
+        // Password toggle
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const password = document.getElementById('password');
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+
+        // Form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const submitBtn = document.querySelector('.btn-login');
+            const originalText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
+            submitBtn.disabled = true;
+            
+            // Re-enable if there's an error (page doesn't redirect)
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+
+        // Auto-focus first input
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('username').focus();
+        });
+    </script>
+</body>
+</html>
