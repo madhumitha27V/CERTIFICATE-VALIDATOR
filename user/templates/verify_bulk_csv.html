@@ -1,0 +1,84 @@
+{% extends 'dashboard.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card p-4">
+                <div class="card-body">
+                    <h2 class="mb-4 text-center"><i class="fas fa-file-csv me-2"></i>Bulk Certificate Verification (CSV)</h2>
+                    <form method="post" enctype="multipart/form-data" class="mb-4 d-flex flex-wrap align-items-end gap-3 justify-content-center">
+                        <div class="form-group mb-0">
+                            <label for="file" class="form-label">Upload CSV File</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Verify
+                        </button>
+                    </form>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                      {% if messages %}
+                        {% for category, message in messages %}
+                          <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                      {% endif %}
+                    {% endwith %}
+
+                    {% if results %}
+                    <h4 class="mb-3">Verification Results</h4>
+                    <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student Name</th>
+                                <th>Register Number</th>
+                                <th>Status</th>
+                                <th>Message</th>
+                                <th>Verified Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for result in results %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ result.row.student_name or '' }}</td>
+                                <td>{{ result.row.register_number or '' }}</td>
+                                <td>
+                                  {% if result.verification %}
+                                    {{ result.verification.status|capitalize }}
+                                  {% else %}
+                                    {{ result.status|capitalize }}
+                                  {% endif %}
+                                </td>
+                                <td>
+                                  {% if result.verification %}
+                                    {{ result.verification.message }}
+                                  {% else %}
+                                    {{ result.message }}
+                                  {% endif %}
+                                </td>
+                                <td>
+                                  {% if result.verification and result.verification.records %}
+                  <span class="collapse-btn" data-bs-toggle="collapse" data-bs-target="#row_{{ loop.index0 }}" aria-expanded="false" aria-controls="row_{{ loop.index0 }}">
+                    Show/Hide
+                  </span>
+                  <div class="collapse mt-2" id="row_{{ loop.index0 }}">
+                    <pre class="pre-data">{{ result.verification.records|tojson(indent=2) }}</pre>
+                  </div>
+                                  {% else %}
+                                    -
+                                  {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

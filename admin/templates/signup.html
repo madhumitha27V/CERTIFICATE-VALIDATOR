@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join CertifyChain - Secure Certificate Verification</title>
+    
+    <!-- Modern CSS Frameworks -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><polygon fill="%23ffffff08" points="0,1000 1000,0 1000,1000"/></svg>');
+            background-size: cover;
+        }
+
+        .signup-container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 2rem 0;
+        }
+
+        .signup-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+        }
+
+        .signup-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .signup-header::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .signup-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .signup-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .signup-form {
+            padding: 3rem 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px 20px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            background: white;
+        }
+
+        .role-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .role-option {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .role-option:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .role-option.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .role-option input[type="radio"] {
+            display: none;
+        }
+
+        .role-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .role-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .role-desc {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .btn-signup {
+            background: var(--success-gradient);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: white;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .login-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .back-to-home {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            color: white;
+            font-size: 1.2rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .back-to-home:hover {
+            color: rgba(255, 255, 255, 0.8);
+            transform: translateX(-5px);
+        }
+
+        @media (max-width: 768px) {
+            .signup-card {
+                margin: 1rem;
+                border-radius: 20px;
+            }
+            
+            .signup-title {
+                font-size: 2rem;
+            }
+            
+            .role-selection {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        .shape:nth-child(1) { width: 60px; height: 60px; top: 20%; left: 10%; animation-delay: -2s; }
+        .shape:nth-child(2) { width: 100px; height: 100px; top: 60%; left: 85%; animation-delay: -8s; }
+        .shape:nth-child(3) { width: 40px; height: 40px; top: 80%; left: 15%; animation-delay: -4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
+            50% { transform: translateY(-50px) rotate(180deg); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('index') }}" class="back-to-home">
+        <i class="fas fa-arrow-left me-2"></i>Back to Home
+    </a>
+
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="signup-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-xl-7">
+                    <div class="signup-card">
+                        <div class="signup-header">
+                            <h1 class="signup-title">
+                                <i class="fas fa-certificate me-3"></i>Join CertifyChain
+                            </h1>
+                            <p class="signup-subtitle">Create your account to start verifying certificates</p>
+                        </div>
+
+                        <div class="signup-form">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                              {% if messages %}
+                                {% for category, message in messages %}
+                                  <div class="alert alert-{{ 'danger' if category == 'error' else category }} d-flex align-items-center">
+                                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                                    {{ message }}
+                                  </div>
+                                {% endfor %}
+                              {% endif %}
+                            {% endwith %}
+
+                            <form method="POST" id="signupForm">
+                                <!-- Role Selection -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-users me-2"></i>Select Your Role
+                                    </label>
+                                    <div class="role-selection">
+                                        <label class="role-option" for="admin">
+                                            <input type="radio" name="role" value="admin" id="admin" required>
+                                            <i class="fas fa-user-tie role-icon"></i>
+                                            <div class="role-title">Admin</div>
+                                            <div class="role-desc">Full system access</div>
+                                        </label>
+                                        <label class="role-option" for="government">
+                                            <input type="radio" name="role" value="government" id="government" required>
+                                            <i class="fas fa-building role-icon"></i>
+                                            <div class="role-title">Government</div>
+                                            <div class="role-desc">Official verification</div>
+                                        </label>
+                                        <label class="role-option" for="user">
+                                            <input type="radio" name="role" value="user" id="user" required>
+                                            <i class="fas fa-user role-icon"></i>
+                                            <div class="role-title">User</div>
+                                            <div class="role-desc">Personal certificates</div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Username -->
+                                <div class="form-group">
+                                    <label for="username" class="form-label">
+                                        <i class="fas fa-user me-2"></i>Username
+                                    </label>
+                                    <input type="text" class="form-control" id="username" name="username" required 
+                                           placeholder="Enter your username" minlength="3">
+                                </div>
+
+                                <!-- Email -->
+                                <div class="form-group">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope me-2"></i>Email Address
+                                    </label>
+                                    <input type="email" class="form-control" id="email" name="email" required 
+                                           placeholder="Enter your email address">
+                                </div>
+
+                                <!-- Password -->
+                                <div class="form-group">
+                                    <label for="password" class="form-label">
+                                        <i class="fas fa-lock me-2"></i>Password
+                                    </label>
+                                    <input type="password" class="form-control" id="password" name="password" required 
+                                           placeholder="Create a strong password" minlength="6">
+                                </div>
+
+                                <!-- Confirm Password -->
+                                <div class="form-group">
+                                    <label for="confirm_password" class="form-label">
+                                        <i class="fas fa-lock me-2"></i>Confirm Password
+                                    </label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required 
+                                           placeholder="Confirm your password">
+                                </div>
+
+                                <button type="submit" class="btn-signup">
+                                    <i class="fas fa-user-plus me-2"></i>Create Account
+                                </button>
+
+                                <div class="login-link">
+                                    <p>Already have an account? <a href="{{ url_for('login') }}">Sign in here</a></p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Role selection functionality
+        document.querySelectorAll('.role-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.role-option').forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
+        });
+
+        // Pre-select role from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const roleParam = urlParams.get('role');
+        if (roleParam) {
+            const roleOption = document.querySelector(`input[value="${roleParam}"]`);
+            if (roleOption) {
+                roleOption.checked = true;
+                roleOption.closest('.role-option').classList.add('active');
+            }
+        }
+
+        // Form validation
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return false;
+            }
+            
+            // Show loading state
+            const submitBtn = document.querySelector('.btn-signup');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+            submitBtn.disabled = true;
+            
+            // Re-enable if there's an error (page doesn't redirect)
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+
+        // Password strength indicator (simple)
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strength = getPasswordStrength(password);
+            
+            // Remove existing classes
+            this.classList.remove('border-danger', 'border-warning', 'border-success');
+            
+            if (password.length === 0) return;
+            
+            if (strength < 2) {
+                this.classList.add('border-danger');
+            } else if (strength < 4) {
+                this.classList.add('border-warning');
+            } else {
+                this.classList.add('border-success');
+            }
+        });
+
+        function getPasswordStrength(password) {
+            let strength = 0;
+            if (password.length >= 6) strength++;
+            if (password.length >= 10) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            return strength;
+        }
+    </script>
+</body>
+</html>
