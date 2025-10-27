@@ -43,13 +43,18 @@ app.static_folder = os.path.join(admin_path, 'static')
 # Initialize database tables
 try:
     with app.app_context():
+        print("Starting database initialization...")
+        
         # Initialize database tables if they don't exist
         if hasattr(admin_module, 'create_block_tables'):
             admin_module.create_block_tables()
+            print("Block tables created/verified")
         if hasattr(admin_module, 'create_admin_table'):
             admin_module.create_admin_table()
+            print("Admin table created/verified")
         if hasattr(admin_module, 'create_users_table'):
             admin_module.create_users_table()
+            print("Users table created/verified")
         
         # Create default admin user if none exists
         import sqlite3
@@ -57,6 +62,8 @@ try:
         try:
             conn = sqlite3.connect('database.db')
             c = conn.cursor()
+            
+            # Check if admin table exists and create admin user
             c.execute("SELECT COUNT(*) FROM admin")
             admin_count = c.fetchone()[0]
             
@@ -65,15 +72,33 @@ try:
                 password_hash = hashlib.sha256('admin123'.encode()).hexdigest()
                 c.execute("INSERT INTO admin (username, password) VALUES (?, ?)", ('admin', password_hash))
                 conn.commit()
-                print("Default admin user created: username=admin, password=admin123")
+                print("✅ Default admin user created: username=admin, password=admin123")
+            else:
+                print(f"✅ Admin table already has {admin_count} users")
+            
+            # Check users table
+            c.execute("SELECT COUNT(*) FROM users")
+            users_count = c.fetchone()[0]
+            print(f"✅ Users table has {users_count} registered users")
+            
+            # Test database write by creating a test entry
+            try:
+                c.execute("DELETE FROM users WHERE username = 'test_db_write'")
+                c.execute("INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)", 
+                         ('test_db_write', 'test@test.com', 'test_hash', 'user'))
+                c.execute("DELETE FROM users WHERE username = 'test_db_write'")
+                conn.commit()
+                print("✅ Database write test successful")
+            except Exception as write_test_error:
+                print(f"❌ Database write test failed: {write_test_error}")
             
             conn.close()
         except Exception as db_error:
-            print(f"Admin user creation error: {db_error}")
+            print(f"❌ Database operations error: {db_error}")
             
-        print("Database initialization completed successfully")
+        print("✅ Database initialization completed successfully")
 except Exception as e:
-    print(f"Database initialization error: {e}")
+    print(f"❌ Database initialization error: {e}")
 
 # This is what Render/Gunicorn will look for
 if __name__ == '__main__':

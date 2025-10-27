@@ -915,12 +915,30 @@ def signup():
         conn = get_db()
         c = conn.cursor()
         try:
+            print(f"🔄 Attempting to register user: {username}, email: {email}, role: {role}")
+            
+            # Check if users table exists
+            c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+            table_exists = c.fetchone()
+            if not table_exists:
+                print("❌ Users table does not exist! Creating it...")
+                create_users_table()
+            else:
+                print("✅ Users table exists")
+            
             c.execute('''INSERT INTO users (username, email, password_hash, role) 
                         VALUES (?, ?, ?, ?)''', (username, email, password_hash, role))
             conn.commit()
+            
+            # Verify the user was actually inserted
+            c.execute("SELECT COUNT(*) FROM users WHERE username = ?", (username,))
+            user_count = c.fetchone()[0]
+            print(f"✅ User registration successful! User count for '{username}': {user_count}")
+            
             flash(f'Account created successfully! Welcome {role.title()}. Please log in.', 'success')
             return redirect(url_for('login'))
         except sqlite3.IntegrityError as e:
+            print(f"❌ Database integrity error: {str(e)}")
             if 'username' in str(e):
                 flash('Username already exists. Please choose a different one.', 'danger')
             elif 'email' in str(e):
@@ -928,6 +946,7 @@ def signup():
             else:
                 flash('Registration failed. Please try again.', 'danger')
         except Exception as e:
+            print(f"❌ Registration error: {str(e)}")
             flash(f'Registration error: {str(e)}', 'danger')
         finally:
             conn.close()
