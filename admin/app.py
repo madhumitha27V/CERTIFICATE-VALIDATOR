@@ -35,7 +35,8 @@ app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 1677
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Database path - can be configured for different environments
-DB_PATH = os.environ.get('DATABASE_URL', 'database.db').replace('sqlite:///', '')
+DB_PATH = os.environ.get('DATABASE_PATH', os.environ.get('DATABASE_URL', 'database.db')).replace('sqlite:///', '')
+print(f"🗄️  Using database path: {DB_PATH}")
 
 # --- Role-Based Authentication Helpers ---
 def hash_password(password):

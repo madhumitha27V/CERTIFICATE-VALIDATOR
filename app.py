@@ -6,20 +6,48 @@ Imports the Flask app from admin directory
 import sys
 import os
 import shutil
+import sqlite3
 
 # Get the current directory and admin path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 admin_path = os.path.join(current_dir, 'admin')
 
-# Ensure database is in the admin directory (copy from root if exists)
-root_db = os.path.join(current_dir, 'database.db')
-admin_db = os.path.join(admin_path, 'database.db')
+# Set up persistent database path
+persistent_data_dir = '/opt/render/project/src/data'
+if os.path.exists(persistent_data_dir):
+    # Running on Render with persistent disk
+    database_path = os.path.join(persistent_data_dir, 'database.db')
+    print(f"🔄 Using persistent database path: {database_path}")
+    
+    # Set environment variable for the admin app to use
+    os.environ['DATABASE_PATH'] = database_path
+else:
+    # Running locally or without persistent disk
+    database_path = os.path.join(admin_path, 'database.db')
+    print(f"🔄 Using local database path: {database_path}")
 
-if os.path.exists(root_db) and not os.path.exists(admin_db):
-    shutil.copy2(root_db, admin_db)
-elif not os.path.exists(admin_db):
-    # Create empty database file if it doesn't exist
-    open(admin_db, 'a').close()
+# Ensure database directory exists
+try:
+    os.makedirs(os.path.dirname(database_path), exist_ok=True)
+    print(f"✅ Database directory created/verified: {os.path.dirname(database_path)}")
+except Exception as dir_error:
+    print(f"❌ Failed to create database directory: {dir_error}")
+
+# Create empty database file if it doesn't exist
+if not os.path.exists(database_path):
+    try:
+        open(database_path, 'a').close()
+        print(f"✅ Created new database file: {database_path}")
+    except Exception as file_error:
+        print(f"❌ Failed to create database file: {file_error}")
+else:
+    # Check if we can write to existing database
+    try:
+        test_conn = sqlite3.connect(database_path)
+        test_conn.close()
+        print(f"✅ Database file exists and accessible: {database_path}")
+    except Exception as access_error:
+        print(f"❌ Database file exists but not accessible: {access_error}")
 
 # Change working directory to admin folder so paths work correctly
 os.chdir(admin_path)
@@ -60,7 +88,7 @@ try:
         import sqlite3
         import hashlib
         try:
-            conn = sqlite3.connect('database.db')
+            conn = sqlite3.connect(database_path)
             c = conn.cursor()
             
             # Check if admin table exists and create admin user
@@ -91,6 +119,14 @@ try:
                 print("✅ Database write test successful")
             except Exception as write_test_error:
                 print(f"❌ Database write test failed: {write_test_error}")
+            
+            # Show final database info
+            c.execute("SELECT COUNT(*) FROM users")
+            total_users = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM admin")
+            total_admins = c.fetchone()[0]
+            print(f"📊 Final database status - Users: {total_users}, Admins: {total_admins}")
+            print(f"📁 Database location: {database_path}")
             
             conn.close()
         except Exception as db_error:
