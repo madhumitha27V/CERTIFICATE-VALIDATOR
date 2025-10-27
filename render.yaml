@@ -3,14 +3,8 @@ services:
     name: certificate-validator-admin
     runtime: python3
     buildCommand: "chmod +x build.sh && ./build.sh"
-    startCommand: "cd admin && python app.py"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT app:app"
     plan: free
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-      - key: PORT
-        value: 10000
-    disk:
-      name: certificate-data
-      mountPath: /opt/render/project/src
-      sizeGB: 1
