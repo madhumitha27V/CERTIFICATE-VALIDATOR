@@ -10,8 +10,14 @@ import os
 admin_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'admin')
 sys.path.insert(0, admin_path)
 
-# Import the Flask app from admin/app.py
-from app import app
+# Import the Flask app from admin/app.py using importlib to avoid circular import
+import importlib.util
+spec = importlib.util.spec_from_file_location("admin_app", os.path.join(admin_path, "app.py"))
+admin_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(admin_module)
+
+# Get the Flask app instance
+app = admin_module.app
 
 # This is what Render/Gunicorn will look for
 if __name__ == '__main__':
