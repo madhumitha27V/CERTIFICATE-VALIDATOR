@@ -8,6 +8,38 @@ import os
 import shutil
 import sqlite3
 
+# CRITICAL: Set Tesseract environment variable FIRST before any imports
+# This must be set before importing admin or user apps
+persistent_data_dir = '/opt/render/project/src/data'
+if os.path.exists(persistent_data_dir):
+    # Running on Render - find working Tesseract path
+    tesseract_paths = ['/usr/bin/tesseract', '/usr/local/bin/tesseract', 'tesseract']
+    working_tesseract = None
+    
+    for path in tesseract_paths:
+        try:
+            import subprocess
+            result = subprocess.run([path, '--version'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                working_tesseract = path
+                print(f"✅ Found working Tesseract at: {path}")
+                break
+        except Exception as e:
+            print(f"❌ Failed to test {path}: {e}")
+            continue
+    
+    if working_tesseract:
+        os.environ['TESSERACT_CMD'] = working_tesseract
+        print(f"🔧 Set TESSERACT_CMD to {working_tesseract} for Render deployment")
+    else:
+        os.environ['TESSERACT_CMD'] = '/usr/bin/tesseract'  # fallback
+        print(f"⚠️ No working Tesseract found, using fallback: /usr/bin/tesseract")
+else:
+    # Running locally - keep Windows path if not already set
+    if 'TESSERACT_CMD' not in os.environ:
+        os.environ['TESSERACT_CMD'] = r'F:\Tesseract-OCR\tesseract.exe'
+    print(f"🔧 Local development - TESSERACT_CMD: {os.environ.get('TESSERACT_CMD')}")
+
 # Get the current directory and admin path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 admin_path = os.path.join(current_dir, 'admin')
@@ -21,10 +53,9 @@ if os.path.exists(persistent_data_dir):
     print(f"🔄 Using persistent admin database: {admin_database_path}")
     print(f"🔄 Using persistent user database: {user_database_path}")
     
-    # Set environment variables
+    # Set database environment variables
     os.environ['ADMIN_DATABASE_PATH'] = admin_database_path
     os.environ['USER_DATABASE_PATH'] = user_database_path
-    os.environ['TESSERACT_CMD'] = 'tesseract'  # Linux system tesseract
     database_path = admin_database_path  # For initialization (admin app)
 else:
     # Running locally - separate databases
