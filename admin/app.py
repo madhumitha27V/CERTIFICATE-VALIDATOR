@@ -16,6 +16,29 @@ import json
 # Set Tesseract-OCR path (Windows local vs Linux hosting)
 tesseract_cmd = os.environ.get('TESSERACT_CMD', r'F:\Tesseract-OCR\tesseract.exe')
 pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+print(f"🔍 Tesseract path set to: {tesseract_cmd}")
+
+# Test Tesseract installation
+try:
+    import subprocess
+    result = subprocess.run([tesseract_cmd, '--version'], capture_output=True, text=True, timeout=10)
+    if result.returncode == 0:
+        print(f"✅ Tesseract is working: {result.stdout.split()[1] if result.stdout else 'version unknown'}")
+    else:
+        print(f"❌ Tesseract test failed with return code: {result.returncode}")
+        print(f"Error: {result.stderr}")
+except Exception as e:
+    print(f"⚠️  Tesseract test error: {e}")
+    # Try alternative paths for Linux
+    for alt_path in ['/usr/bin/tesseract', '/usr/local/bin/tesseract', 'tesseract']:
+        try:
+            result = subprocess.run([alt_path, '--version'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                pytesseract.pytesseract.tesseract_cmd = alt_path
+                print(f"✅ Found working Tesseract at: {alt_path}")
+                break
+        except:
+            continue
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -1088,16 +1111,25 @@ def upload_single():
                 ocr_configs = ['--psm 6', '--psm 4', '--psm 3']
                 text = None
                 
+                ocr_error = None
                 for config in ocr_configs:
                     try:
+                        print(f"🔍 Trying OCR with config: {config}")
                         text = pytesseract.image_to_string(processed_image, config=config)
+                        print(f"📄 OCR extracted {len(text.strip()) if text else 0} characters")
                         if text and len(text.strip()) > 50:  # Got decent amount of text
                             break
-                    except:
+                    except Exception as ocr_err:
+                        ocr_error = str(ocr_err)
+                        print(f"❌ OCR error with {config}: {ocr_error}")
                         continue
                 
                 if not text or len(text.strip()) < 20:
-                    flash('Could not extract readable text from the image. Please ensure the image is clear and try again.', 'danger')
+                    error_msg = 'Could not extract readable text from the image. Please ensure the image is clear and try again.'
+                    if ocr_error:
+                        error_msg += f' Technical error: {ocr_error}'
+                        print(f"🚨 OCR Failed: {ocr_error}")
+                    flash(error_msg, 'danger')
                     return redirect(url_for('upload_single'))
                 
                 # Detect session

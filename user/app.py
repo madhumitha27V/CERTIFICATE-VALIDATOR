@@ -14,6 +14,29 @@ import json
 # Set Tesseract-OCR path (Windows local vs Linux hosting)
 tesseract_cmd = os.environ.get('TESSERACT_CMD', r'F:\Tesseract-OCR\tesseract.exe')
 pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+print(f"🔍 User app - Tesseract path set to: {tesseract_cmd}")
+
+# Test Tesseract installation
+try:
+    import subprocess
+    result = subprocess.run([tesseract_cmd, '--version'], capture_output=True, text=True, timeout=10)
+    if result.returncode == 0:
+        print(f"✅ User app - Tesseract is working: {result.stdout.split()[1] if result.stdout else 'version unknown'}")
+    else:
+        print(f"❌ User app - Tesseract test failed with return code: {result.returncode}")
+        print(f"Error: {result.stderr}")
+except Exception as e:
+    print(f"⚠️  User app - Tesseract test error: {e}")
+    # Try alternative paths for Linux
+    for alt_path in ['/usr/bin/tesseract', '/usr/local/bin/tesseract', 'tesseract']:
+        try:
+            result = subprocess.run([alt_path, '--version'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                pytesseract.pytesseract.tesseract_cmd = alt_path
+                print(f"✅ User app - Found working Tesseract at: {alt_path}")
+                break
+        except:
+            continue
 
 app = Flask(__name__)
 app.secret_key = 'user_portal_secret_key_2025'
