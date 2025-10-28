@@ -896,6 +896,76 @@ def index():
     """Landing page with role-based access"""
     return render_template('index.html')
 
+@app.route('/debug-ocr')
+def debug_ocr():
+    """Debug endpoint to check OCR configuration"""
+    debug_info = {
+        'tesseract_cmd': pytesseract.pytesseract.tesseract_cmd,
+        'tesseract_env': os.environ.get('TESSERACT_CMD', 'Not set'),
+        'system_info': {}
+    }
+    
+    # Test Tesseract installation
+    try:
+        import subprocess
+        result = subprocess.run([pytesseract.pytesseract.tesseract_cmd, '--version'], 
+                              capture_output=True, text=True, timeout=10)
+        debug_info['tesseract_test'] = {
+            'success': result.returncode == 0,
+            'stdout': result.stdout,
+            'stderr': result.stderr,
+            'returncode': result.returncode
+        }
+    except Exception as e:
+        debug_info['tesseract_test'] = {
+            'success': False,
+            'error': str(e)
+        }
+    
+    # Check if tesseract command exists in common paths
+    test_paths = ['/usr/bin/tesseract', '/usr/local/bin/tesseract', 'tesseract']
+    path_tests = {}
+    for path in test_paths:
+        try:
+            result = subprocess.run([path, '--version'], capture_output=True, text=True, timeout=5)
+            path_tests[path] = {
+                'exists': True,
+                'works': result.returncode == 0,
+                'version': result.stdout.split('\n')[0] if result.stdout else 'Unknown'
+            }
+        except Exception as e:
+            path_tests[path] = {'exists': False, 'error': str(e)}
+    
+    debug_info['path_tests'] = path_tests
+    
+    return f"<pre>{str(debug_info)}</pre>"
+
+@app.route('/test-ocr')
+def test_ocr():
+    """Test OCR with a simple image"""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        
+        # Create a simple test image with text
+        img = Image.new('RGB', (300, 100), color='white')
+        draw = ImageDraw.Draw(img)
+        
+        try:
+            # Try to use a font, fall back to default if not available
+            font = ImageFont.load_default()
+        except:
+            font = None
+        
+        draw.text((10, 30), "TEST IMAGE 2024", fill='black', font=font)
+        
+        # Try OCR on this simple image
+        text = pytesseract.image_to_string(img)
+        
+        return f"<h3>OCR Test Results:</h3><pre>Extracted text: '{text.strip()}'</pre><p>Success: OCR is working!</p>"
+        
+    except Exception as e:
+        return f"<h3>OCR Test Failed:</h3><pre>Error: {str(e)}</pre>"
+
 @app.route('/home')
 def home():
     """Legacy route redirect"""
