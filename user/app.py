@@ -25,9 +25,11 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Ensure upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Database path
-ADMIN_DB_PATH = 'C:/Users/dharn/OneDrive/Desktop/SIH/prototype 6/CERTIFICATE - FINAL - SIH/database.db'
-USER_DB_PATH = 'database.db'
+# Database paths - User app uses its own database
+USER_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.db')
+ADMIN_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'admin', 'database.db')
+print(f"🗄️  User app using database path: {USER_DB_PATH}")
+print(f"🔗 Admin database path for verification: {ADMIN_DB_PATH}")
 
 # --- Database Helper Functions ---
 def get_admin_db():

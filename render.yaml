@@ -8,8 +8,10 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-      - key: DATABASE_PATH
-        value: /opt/render/project/src/data/database.db
+      - key: ADMIN_DATABASE_PATH
+        value: /opt/render/project/src/data/admin_database.db
+      - key: USER_DATABASE_PATH
+        value: /opt/render/project/src/data/user_database.db
     disk:
       name: certificate-data
       mountPath: /opt/render/project/src/data

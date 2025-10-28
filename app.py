@@ -12,19 +12,26 @@ import sqlite3
 current_dir = os.path.dirname(os.path.abspath(__file__))
 admin_path = os.path.join(current_dir, 'admin')
 
-# Set up persistent database path
+# Set up separate database paths for admin and user
 persistent_data_dir = '/opt/render/project/src/data'
 if os.path.exists(persistent_data_dir):
     # Running on Render with persistent disk
-    database_path = os.path.join(persistent_data_dir, 'database.db')
-    print(f"🔄 Using persistent database path: {database_path}")
+    admin_database_path = os.path.join(persistent_data_dir, 'admin_database.db')
+    user_database_path = os.path.join(persistent_data_dir, 'user_database.db')
+    print(f"🔄 Using persistent admin database: {admin_database_path}")
+    print(f"🔄 Using persistent user database: {user_database_path}")
     
-    # Set environment variable for the admin app to use
-    os.environ['DATABASE_PATH'] = database_path
+    # Set environment variables
+    os.environ['ADMIN_DATABASE_PATH'] = admin_database_path
+    os.environ['USER_DATABASE_PATH'] = user_database_path
+    database_path = admin_database_path  # For initialization (admin app)
 else:
-    # Running locally or without persistent disk
-    database_path = os.path.join(admin_path, 'database.db')
-    print(f"🔄 Using local database path: {database_path}")
+    # Running locally - separate databases
+    admin_database_path = os.path.join(admin_path, 'database.db')
+    user_database_path = os.path.join(current_dir, 'user', 'database.db')
+    print(f"🔄 Using local admin database: {admin_database_path}")
+    print(f"🔄 Using local user database: {user_database_path}")
+    database_path = admin_database_path  # For initialization
 
 # Ensure database directory exists
 try:
@@ -132,7 +139,60 @@ try:
         except Exception as db_error:
             print(f"❌ Database operations error: {db_error}")
             
-        print("✅ Database initialization completed successfully")
+        print("✅ Admin database initialization completed successfully")
+        
+        # Initialize User Database
+        print("🔄 Initializing user database...")
+        try:
+            # Ensure user database directory exists
+            os.makedirs(os.path.dirname(user_database_path), exist_ok=True)
+            
+            # Create user database if it doesn't exist
+            if not os.path.exists(user_database_path):
+                open(user_database_path, 'a').close()
+                print(f"✅ Created user database: {user_database_path}")
+            
+            # Initialize user database tables
+            user_conn = sqlite3.connect(user_database_path)
+            user_c = user_conn.cursor()
+            
+            # Create user tables
+            user_c.execute('''CREATE TABLE IF NOT EXISTS portal_users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                full_name TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_login TIMESTAMP,
+                is_active BOOLEAN DEFAULT 1
+            )''')
+            
+            user_c.execute('''CREATE TABLE IF NOT EXISTS user_certificates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                filename TEXT NOT NULL,
+                original_filename TEXT NOT NULL,
+                extracted_data TEXT,
+                verification_status TEXT DEFAULT 'pending',
+                verification_result TEXT,
+                upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES portal_users (id)
+            )''')
+            
+            user_conn.commit()
+            
+            # Check user database status
+            user_c.execute("SELECT COUNT(*) FROM portal_users")
+            user_count = user_c.fetchone()[0]
+            print(f"✅ User database initialized - Users: {user_count}")
+            
+            user_conn.close()
+            
+        except Exception as user_db_error:
+            print(f"❌ User database initialization error: {user_db_error}")
+        
+        print("✅ All databases initialization completed successfully")
 except Exception as e:
     print(f"❌ Database initialization error: {e}")
 

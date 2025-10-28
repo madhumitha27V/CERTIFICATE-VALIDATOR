@@ -34,9 +34,10 @@ app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 1677
 # Ensure upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Database path - can be configured for different environments
-DB_PATH = os.environ.get('DATABASE_PATH', os.environ.get('DATABASE_URL', 'database.db')).replace('sqlite:///', '')
-print(f"🗄️  Using database path: {DB_PATH}")
+# Database path - Admin app uses its own database
+ADMIN_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.db')
+DB_PATH = os.environ.get('ADMIN_DATABASE_PATH', ADMIN_DB_PATH)
+print(f"🗄️  Admin app using database path: {DB_PATH}")
 
 # --- Role-Based Authentication Helpers ---
 def hash_password(password):
@@ -826,7 +827,7 @@ def create_users_table():
         username TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        role TEXT NOT NULL CHECK (role IN ('admin', 'government', 'user')),
+        role TEXT NOT NULL CHECK (role IN ('admin', 'government')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_login TIMESTAMP,
         is_active BOOLEAN DEFAULT 1
@@ -906,8 +907,8 @@ def signup():
             flash('Password must be at least 6 characters long.', 'danger')
             return render_template('signup.html')
         
-        if role not in ['admin', 'government', 'user']:
-            flash('Invalid role selected.', 'danger')
+        if role not in ['admin', 'government']:
+            flash('Invalid role selected. Admin portal only supports Admin and Government roles.', 'danger')
             return render_template('signup.html')
         
         # Hash password
