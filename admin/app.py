@@ -2,6 +2,7 @@ import os
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import BadRequestKeyError
 from functools import wraps
 from datetime import datetime
 import hashlib
@@ -12,29 +13,21 @@ import csv
 import re
 import json
 
-# Environment-based configuration
-if os.path.exists('.env'):
-    from dotenv import load_dotenv
-    load_dotenv()
-
 # Set Tesseract-OCR path (Windows local vs Linux hosting)
-tesseract_cmd = os.environ.get('TESSERACT_CMD', r'C:\Program Files\Tesseract-OCR\tesseract.exe')
+tesseract_cmd = os.environ.get('TESSERACT_CMD', r'F:\Tesseract-OCR\tesseract.exe')
 pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
 
 app = Flask(__name__)
-# Use environment variable for secret key (more secure)
-app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key_change_in_production')
+app.secret_key = 'your_secret_key'
 
-# Configuration from environment variables
-UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'static/uploads/')
+UPLOAD_FOLDER = 'static/uploads/'
 ALLOWED_EXTENSIONS = {'csv', 'jpeg', 'jpg', 'png'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 16777216))  # 16MB max
 
 # Ensure upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Database path - Admin app uses its own database
+# Database configuration with environment support
 ADMIN_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.db')
 DB_PATH = os.environ.get('ADMIN_DATABASE_PATH', ADMIN_DB_PATH)
 print(f"🗄️  Admin app using database path: {DB_PATH}")
@@ -827,7 +820,7 @@ def create_users_table():
         username TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        role TEXT NOT NULL CHECK (role IN ('admin', 'government')),
+        role TEXT NOT NULL CHECK (role IN ('admin', 'government', 'user')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_login TIMESTAMP,
         is_active BOOLEAN DEFAULT 1
@@ -907,8 +900,8 @@ def signup():
             flash('Password must be at least 6 characters long.', 'danger')
             return render_template('signup.html')
         
-        if role not in ['admin', 'government']:
-            flash('Invalid role selected. Admin portal only supports Admin and Government roles.', 'danger')
+        if role not in ['admin', 'government', 'user']:
+            flash('Invalid role selected.', 'danger')
             return render_template('signup.html')
         
         # Hash password
@@ -917,30 +910,12 @@ def signup():
         conn = get_db()
         c = conn.cursor()
         try:
-            print(f"🔄 Attempting to register user: {username}, email: {email}, role: {role}")
-            
-            # Check if users table exists
-            c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-            table_exists = c.fetchone()
-            if not table_exists:
-                print("❌ Users table does not exist! Creating it...")
-                create_users_table()
-            else:
-                print("✅ Users table exists")
-            
             c.execute('''INSERT INTO users (username, email, password_hash, role) 
                         VALUES (?, ?, ?, ?)''', (username, email, password_hash, role))
             conn.commit()
-            
-            # Verify the user was actually inserted
-            c.execute("SELECT COUNT(*) FROM users WHERE username = ?", (username,))
-            user_count = c.fetchone()[0]
-            print(f"✅ User registration successful! User count for '{username}': {user_count}")
-            
             flash(f'Account created successfully! Welcome {role.title()}. Please log in.', 'success')
             return redirect(url_for('login'))
         except sqlite3.IntegrityError as e:
-            print(f"❌ Database integrity error: {str(e)}")
             if 'username' in str(e):
                 flash('Username already exists. Please choose a different one.', 'danger')
             elif 'email' in str(e):
@@ -948,7 +923,6 @@ def signup():
             else:
                 flash('Registration failed. Please try again.', 'danger')
         except Exception as e:
-            print(f"❌ Registration error: {str(e)}")
             flash(f'Registration error: {str(e)}', 'danger')
         finally:
             conn.close()
@@ -1060,7 +1034,16 @@ def user_dashboard():
 @role_required('admin')
 def upload_bulk():
     if request.method == 'POST':
+        # Check if file is in the request
+        if 'file' not in request.files:
+            flash('No file selected. Please choose a CSV file to upload.', 'danger')
+            return render_template('upload_bulk.html')
+        
         file = request.files['file']
+        if file.filename == '':
+            flash('No file selected. Please choose a CSV file to upload.', 'danger')
+            return render_template('upload_bulk.html')
+        
         if file and allowed_file(file.filename) and file.filename.rsplit('.', 1)[1].lower() == 'csv':
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -1081,92 +1064,69 @@ def upload_bulk():
 @role_required('admin', 'government', 'user')
 def upload_single():
     if request.method == 'POST':
-        file = request.files.get('file')
-        if not file or file.filename == '':
-            flash('No file selected or file part missing in the request.', 'danger')
-            return redirect(request.url)
-        if not allowed_file(file.filename) or file.filename.rsplit('.', 1)[1].lower() not in {'jpeg', 'jpg', 'png'}:
+        # Check if file is in the request
+        if 'file' not in request.files:
+            flash('No file selected. Please choose a file to upload.', 'danger')
+            return render_template('upload_single.html')
+        
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected. Please choose a file to upload.', 'danger')
+            return render_template('upload_single.html')
+        
+        if file and allowed_file(file.filename) and file.filename.rsplit('.', 1)[1].lower() in {'jpeg', 'jpg', 'png'}:
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            
+            try:
+                # OCR extraction with preprocessing
+                image = Image.open(filepath)
+                processed_image = preprocess_image(image)
+                
+                # Extract text using OCR with different PSM modes for better accuracy
+                ocr_configs = ['--psm 6', '--psm 4', '--psm 3']
+                text = None
+                
+                for config in ocr_configs:
+                    try:
+                        text = pytesseract.image_to_string(processed_image, config=config)
+                        if text and len(text.strip()) > 50:  # Got decent amount of text
+                            break
+                    except:
+                        continue
+                
+                if not text or len(text.strip()) < 20:
+                    flash('Could not extract readable text from the image. Please ensure the image is clear and try again.', 'danger')
+                    return redirect(url_for('upload_single'))
+                
+                # Detect session
+                session_found = detect_session(text)
+                
+                if not session_found:
+                    flash('Could not detect a valid session (JANUARY 2024, MAY 2024, NOVEMBER 2024) in the marksheet. Please check the image quality or content.', 'danger')
+                    return redirect(url_for('upload_single'))
+                
+                # Extract all marksheet data
+                extracted_data = extract_marksheet_data(text)
+                extracted_data['session'] = session_found
+                extracted_data['meta'] = f"OCR extracted from {filename}"
+                
+                # Insert into appropriate block table
+                block = f"block_{session_found}"
+                insert_into_block(block, extracted_data)
+                
+                # Simple success message
+                flash(f'Certificate uploaded and processed successfully! Session: {session_found.upper()}', 'success')
+                
+                return redirect(url_for('dashboard'))
+                
+            except Exception as e:
+                print(f"Error processing image {filename}: {str(e)}")
+                flash(f'Error processing image: {str(e)}. Please try again with a clearer image.', 'danger')
+                return redirect(url_for('upload_single'))
+        else:
             flash('Invalid file type. Please upload a JPEG/JPG/PNG.', 'danger')
-            return redirect(request.url)
-
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-
-        try:
-            # OCR extraction with preprocessing
-            image = Image.open(filepath)
-            processed_image = preprocess_image(image)
-
-            # Extract text using OCR with different PSM modes for better accuracy
-            ocr_configs = ['--psm 6', '--psm 4', '--psm 3']
-            text = None
-
-            for config in ocr_configs:
-                try:
-                    text = pytesseract.image_to_string(processed_image, config=config)
-                    if text and len(text.strip()) > 50:  # Got decent amount of text
-                        break
-                except Exception as ocr_err:
-                    print(f"OCR error with config {config}: {ocr_err}")
-                    continue
-
-            if not text or len(text.strip()) < 20:
-                flash('Could not extract readable text from the image. Please ensure the image is clear and try again.', 'danger')
-                return redirect(url_for('upload_single'))
-
-            # Debug logging - print extracted text to console
-            print(f"=== DEBUG: OCR Text from {filename} ===")
-            print(text)
-            print("=" * 60)
-
-            # Detect session
-            session_found = detect_session(text)
-            print(f"Session detected: {session_found}")
-
-            if not session_found:
-                flash('Could not detect a valid session (JANUARY 2024, MAY 2024, NOVEMBER 2024) in the marksheet. Please check the image quality or content.', 'danger')
-                return redirect(url_for('upload_single'))
-
-            # Extract all marksheet data
-            extracted_data = extract_marksheet_data(text)
-            extracted_data['session'] = session_found
-
-            # Debug logging - print extracted data
-            print(f"=== DEBUG: Extracted Data ===")
-            for key, value in extracted_data.items():
-                if key != 'subjects':
-                    print(f"{key}: {value}")
-            if 'subjects' in extracted_data and extracted_data['subjects']:
-                print(f"subjects: {len(extracted_data['subjects'])} subjects found")
-                for i, subject in enumerate(extracted_data['subjects']):
-                    print(f"  Subject {i+1}: {subject}")
-            print("=" * 60)
-
-            # Add some meta information for debugging
-            extracted_data['meta'] = f"OCR extracted from {filename}"
-
-            # Insert into appropriate block table
-            block = f"block_{session_found}"
-            insert_into_block(block, extracted_data)
-
-            # Create detailed success message
-            extracted_fields = [k for k, v in extracted_data.items() if v and k not in ['subjects', 'meta']]
-            subjects_count = len(extracted_data.get('subjects', []))
-
-            success_msg = f'Marksheet processed successfully! Session: {session_found}. '
-            success_msg += f'Extracted {len(extracted_fields)} fields: {", ".join(extracted_fields)}. '
-            if subjects_count > 0:
-                success_msg += f'Found {subjects_count} subjects.'
-
-            flash(success_msg, 'success')
-
-            return redirect(url_for('dashboard'))
-
-        except Exception as e:
-            print(f"Error processing image {filename}: {str(e)}")
-            flash(f'Error processing image: {str(e)}. Please try again with a clearer image.', 'danger')
-            return redirect(url_for('upload_single'))
     return render_template('upload_single.html')
 
 @app.route('/view_records')
@@ -1271,13 +1231,28 @@ def not_found(error):
     flash('Page not found.', 'warning')
     return redirect(url_for('dashboard_redirect'))
 
+@app.errorhandler(BadRequestKeyError)
+def bad_request_key_error(error):
+    if 'file' in str(error):
+        flash('No file was uploaded. Please select a file and try again.', 'danger')
+    else:
+        flash('Invalid request. Please check your input and try again.', 'danger')
+    return redirect(url_for('dashboard_redirect'))
+
 @app.errorhandler(500)
 def internal_error(error):
     flash('An internal error occurred. Please try again later.', 'danger')
     return redirect(url_for('dashboard_redirect'))
 
+def init_database():
+    """Initialize database tables at startup"""
+    try:
+        create_admin_table()
+        create_users_table()
+        print("✅ Database tables initialized successfully")
+    except Exception as e:
+        print(f"❌ Database initialization error: {e}")
+
 if __name__ == '__main__':
-    # Get port from environment variable for hosting platforms
-    port = int(os.environ.get('PORT', 5000))
-    # Run with production settings
-    app.run(host='0.0.0.0', port=port, debug=False)
+    init_database()
+    app.run(debug=True)
